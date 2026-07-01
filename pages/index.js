@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import Head from 'next/head'
+import InquiryModal from '../components/InquiryModal';
 
 const G='#1B7A68',GD='#0F5E50',GL='#E8F5F2',BG='#F6F3EC',TX='#1C1B1F',MU='#5A5857',BD='#E2DDD6'
 const RISK={High:{bg:'#FCEBEB',text:'#A32D2D'},Medium:{bg:'#FAEEDA',text:'#854F0B'},Low:{bg:'#EAF3DE',text:'#3B6D11'}}
@@ -47,11 +48,17 @@ export default function Home(){
   return(<>
     <Head>
       <title>Culture Governance Audit — Aloha AI Consulting</title>
+      <meta name="description" content="Cross-reference your campaign's AI and influencer activations against live FTC enforcement actions, pending Congressional AI legislation, and Federal Register rulemaking."/>
       <meta name="robots" content="noindex"/>
+      <meta property="og:title" content="Culture Governance Audit — Aloha AI Consulting"/>
+      <meta property="og:description" content="Live AI governance risk assessment for marketing and cultural activations."/>
+      <meta property="og:type" content="website"/>
+      <link rel="preconnect" href="https://fonts.googleapis.com"/>
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
       <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet"/>
     </Head>
     <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',background:BG}}>
-      <header style={{background:G,padding:'16px 40px',display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+      <header style={{background:G,padding:'16px clamp(20px, 5vw, 40px)',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
         <div style={{display:'flex',alignItems:'center',gap:14}}>
           <div style={{width:36,height:36,borderRadius:6,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne',fontSize:10,fontWeight:700,color:'white',letterSpacing:'.05em'}}>AAC</div>
           <div>
@@ -66,9 +73,9 @@ export default function Home(){
         )}
       </header>
 
-      <main style={{flex:1,maxWidth:860,margin:'0 auto',padding:'56px 40px 100px',width:'100%'}}>
+      <main style={{flex:1,maxWidth:860,margin:'0 auto',padding:'clamp(32px, 5vw, 56px) clamp(20px, 5vw, 40px) 100px',width:'100%'}}>
         <h1 style={{fontFamily:'Syne',fontSize:30,fontWeight:700,color:TX,marginBottom:10,letterSpacing:'-.02em'}}>Culture Governance Audit</h1>
-        <p style={{fontSize:15,color:MU,lineHeight:1.65,marginBottom:48,maxWidth:600}}>Input your client type and activation details. This tool cross-references your inputs against live FTC enforcement actions, pending Congressional AI legislation, and Federal Register rulemaking to return a current risk assessment.</p>
+        <p style={{fontSize:15,color:MU,lineHeight:1.65,marginBottom:48,maxWidth:600}}>Select your client industry and activation types. The tool cross-references them against live FTC enforcement actions, pending Congressional AI legislation, and Federal Register rulemaking to generate a current risk assessment.</p>
 
         {/* Live regulatory context strip */}
         {!regLoading&&(totalFtc>0||totalCongress>0)&&(
@@ -89,21 +96,21 @@ export default function Home(){
           </div>
         )}
 
-        <div style={{background:'white',border:`1px solid ${BD}`,borderRadius:10,padding:'36px 40px',marginBottom:40}}>
+        <div style={{background:'white',border:`1px solid ${BD}`,borderRadius:10,padding:'clamp(24px, 4vw, 36px) clamp(20px, 4vw, 40px)',marginBottom:40}}>
           <div style={{marginBottom:24}}>
-            <label style={{display:'block',fontFamily:'Syne',fontSize:12,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:8}}>Client industry</label>
-            <select value={clientType} onChange={e=>setClientType(e.target.value)} style={{width:'100%',padding:'12px 16px',border:`1px solid ${BD}`,borderRadius:6,fontFamily:'Manrope',fontSize:15,color:TX,background:BG,appearance:'none',outline:'none'}}>
+            <label htmlFor="client-industry" style={{display:'block',fontFamily:'Syne',fontSize:12,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:8}}>Client industry</label>
+            <select id="client-industry" value={clientType} onChange={e=>setClientType(e.target.value)} aria-label="Client industry" style={{width:'100%',padding:'12px 16px',border:`1px solid ${BD}`,borderRadius:6,fontFamily:'Manrope',fontSize:15,color:TX,background:BG,appearance:'none',outline:'none'}}>
               <option value="">Select industry...</option>
               {['Fashion & Luxury','Beauty & Personal Care','Entertainment & Media','Technology','Sports & Fitness','Food & Beverage','Financial Services','Health & Wellness','Retail & E-commerce'].map(o=><option key={o}>{o}</option>)}
             </select>
           </div>
           <div style={{marginBottom:24}}>
-            <label style={{display:'block',fontFamily:'Syne',fontSize:12,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:8}}>Campaign description</label>
-            <input type="text" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="e.g. Influencer-led launch campaign featuring AI-generated content..." style={{width:'100%',padding:'12px 16px',border:`1px solid ${BD}`,borderRadius:6,fontFamily:'Manrope',fontSize:15,color:TX,background:BG,outline:'none'}}/>
+            <label htmlFor="campaign-desc" style={{display:'block',fontFamily:'Syne',fontSize:12,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:8}}>Campaign description</label>
+            <input id="campaign-desc" type="text" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="e.g. Influencer-led launch campaign featuring AI-generated content..." aria-label="Campaign description" style={{width:'100%',padding:'12px 16px',border:`1px solid ${BD}`,borderRadius:6,fontFamily:'Manrope',fontSize:15,color:TX,background:BG,outline:'none'}}/>
           </div>
           <div style={{marginBottom:28}}>
             <label style={{display:'block',fontFamily:'Syne',fontSize:12,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:8}}>Activation types</label>
-            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10}}>
+            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:10}}>
               {Object.entries(AUDIT_LOGIC).map(([k,v])=>(
                 <label key={k} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',border:`1px solid ${checked.includes(k)?G:BD}`,borderRadius:6,background:checked.includes(k)?GL:BG,cursor:'pointer'}}>
                   <input type="checkbox" checked={checked.includes(k)} onChange={()=>toggle(k)} style={{accentColor:G,width:16,height:16,flexShrink:0}}/>
@@ -112,6 +119,7 @@ export default function Home(){
               ))}
             </div>
           </div>
+          <p style={{fontSize:12,color:MU,lineHeight:1.6,marginBottom:16,padding:'12px 16px',background:GL,borderRadius:6,border:`1px solid ${BD}`}}>This tool provides informational risk context only and does not constitute legal advice. Consult qualified legal counsel before making compliance decisions.</p>
           <button onClick={runAudit} disabled={!clientType||running} style={{display:'block',width:'100%',padding:16,background:!clientType||running?'#9BBFBA':G,border:'none',borderRadius:8,fontFamily:'Syne',fontSize:15,fontWeight:600,color:'white',cursor:!clientType||running?'not-allowed':'pointer'}}>
             {running?'Running audit...':'Run Governance Audit'}
           </button>
@@ -119,7 +127,10 @@ export default function Home(){
 
         {results&&(
           <div>
-            <h2 style={{fontFamily:'Syne',fontSize:20,fontWeight:700,color:TX,marginBottom:6}}>{results.length} exposure area{results.length!==1?'s':''} identified</h2>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,marginBottom:6}}>
+              <h2 style={{fontFamily:'Syne',fontSize:20,fontWeight:700,color:TX}}>{results.length} exposure area{results.length!==1?'s':''} identified</h2>
+              <button onClick={()=>{setResults(null);setChecked([]);setDesc('');setClientType('')}} style={{fontFamily:'Syne',fontSize:12,fontWeight:600,padding:'8px 16px',background:'transparent',border:`1px solid ${BD}`,borderRadius:6,color:MU,cursor:'pointer'}}>Clear and start over</button>
+            </div>
             <p style={{fontSize:14,color:MU,marginBottom:24}}>{results.filter(r=>r.risk==='High').length} high-risk · {results.filter(r=>r.risk==='Medium').length} medium-risk · cross-referenced against {totalFtc} live FTC actions and {totalCongress} pending AI bills</p>
             {results.map((f,i)=>{
               const rc=RISK[f.risk]||RISK.Low
@@ -142,9 +153,10 @@ export default function Home(){
             })}
           </div>
         )}
-      </main>
+            <InquiryModal source="governance-audit" />
+    </main>
 
-      <footer style={{background:TX,padding:'28px 40px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:24,flexWrap:'wrap'}}>
+      <footer style={{background:TX,padding:'28px clamp(20px, 5vw, 40px)',display:'flex',alignItems:'center',justifyContent:'space-between',gap:24,flexWrap:'wrap'}}>
         <div>
           <div style={{fontFamily:'Syne',fontSize:13,fontWeight:600,color:'white'}}>RN Collins</div>
           <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:2}}>Neuroscientist · JD Candidate, Northeastern · AI Governance Researcher, Brown University AISLE Project</div>
