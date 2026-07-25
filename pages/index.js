@@ -221,7 +221,7 @@ export default function Home(){
 </div>
 <div style={{textAlign:'center',padding:'.75rem 1rem',fontSize:'.7rem',borderTop:'1px solid rgba(0,0,0,.1)',marginTop:'2rem'}}>
   Built by <a href="https://rn-portfolio-khaki.vercel.app" target="_blank" rel="noopener"
-  style={{color:'#1B7A68',textDecoration:'none'}}>RN Builds</a> — explore all AI tools and projects.
+  style={{color:'#1B7A68',textDecoration:'none'}}>RN Builds</a> · <a href="https://aloha-ai-consulting.vercel.app" target="_blank" rel="noopener" style={{color:'inherit',textDecoration:'none'}}>Aloha AI Consulting</a> — explore all AI tools and projects.
 </div>
   </>)
 }
