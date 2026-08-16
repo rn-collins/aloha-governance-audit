@@ -1,227 +1,49 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import Head from 'next/head'
-import InquiryModal from '../components/InquiryModal';
 
-const G='#1B7A68',GD='#0F5E50',GL='#E8F5F2',BG='#F6F3EC',TX='#1C1B1F',MU='#5A5857',BD='#E2DDD6'
-const RISK={High:{bg:'#FCEBEB',text:'#A32D2D'},Medium:{bg:'#FAEEDA',text:'#854F0B'},Low:{bg:'#EAF3DE',text:'#3B6D11'}}
-
-const AUDIT_LOGIC={
-  influencer:{title:'Influencer / creator partnerships',risk:'Medium',exposure:'FTC 2023 Endorsement Guide updates require clear disclosure for all paid partnerships. AI-generated content within influencer posts requires additional disclosure under 2024 FTC AI guidance.',mitigation:'Audit all active agreements for AI content clauses. Ensure disclosure language covers all content formats — static, Stories, video, and live.'},
-  'ai-content':{title:'AI-generated content',risk:'High',exposure:'FTC guidance (2024) requires clear disclosure when content is AI-generated or materially altered. Most pre-2023 influencer agreements lack AI content clauses entirely.',mitigation:'Add AI content rider to all active agreements. Minimum provisions: disclosure obligation, agency review rights, IP ownership of AI-assisted work product.'},
-  music:{title:'Licensed or AI-generated music',risk:'Medium',exposure:'AI music licensing is legally unsettled. Copyright Office (2024) confirmed AI-generated music is not independently copyrightable. Tools trained on unlicensed music create downstream exposure.',mitigation:'Use only music from platforms with explicit AI licensing frameworks. Document provenance of all AI-generated music. Do not rely on "sounds original" as a legal defense.'},
-  synthetic:{title:'Synthetic media / deepfakes',risk:'High',exposure:'California AB 2602 (2024), Tennessee ELVIS Act (2024), and the proposed federal NO FAKES Act all create distinct exposure for unconsented use of AI-generated likeness.',mitigation:'Obtain explicit written AI likeness consent before any production. Do not rely on verbal consent or existing talent agreements — they predate AI-specific rights.'},
-  ugc:{title:'User-generated content',risk:'Low',exposure:'Standard UGC policies apply. Monitor for AI-generated UGC mixed into campaigns — FTC may require disclosure even when the brand did not generate the content.',mitigation:'Add AI content monitoring to UGC review process. Update UGC submission terms to require disclosure of AI-generated submissions.'},
-  celebrity:{title:'Celebrity likeness or partnership',risk:'High',exposure:'Digital likeness rights are not uniformly codified. State right-of-publicity laws vary significantly. AI-generated celebrity likeness without explicit consent is high-risk regardless of perceived permission.',mitigation:'Obtain explicit written AI likeness consent separate from standard talent agreements. Brief legal counsel before any AI-adjacent celebrity activation.'},
-  'film-tv':{title:'Film or TV content integration',risk:'Low',exposure:'Standard licensed content integration. Monitor for AI-generated content within the show itself — some productions are beginning to use AI for background elements.',mitigation:'Standard content licensing due diligence applies. Add AI content inquiry to production licensing review.'},
-  virtual:{title:'Virtual influencer or avatar',risk:'High',exposure:'Virtual influencers are not covered by standard influencer disclosure frameworks. FTC guidance on AI-generated personas is still developing. EU AI Act (Aug 2026) requires disclosure of AI-generated personas interacting with consumers.',mitigation:'Implement clear "AI character" disclosure on all content. Brief legal on FTC AI disclosure requirements and EU AI Act compliance before any activation.'}
+const G='#1B7A68', BG='#F6F3EC', TX='#1C1B1F', MU='#5A5857', BD='#E2DDD6'
+const SOURCES={
+ ftc:{label:'FTC Endorsement Guides',href:'https://www.ftc.gov/business-guidance/advertising-marketing/endorsements-influencers-reviews'},
+ copyright:{label:'U.S. Copyright Office AI initiative',href:'https://www.copyright.gov/ai/'},
+ nofakes:{label:'Congress.gov — H.R. 2794 (introduced)',href:'https://www.congress.gov/bill/119th-congress/house-bill/2794'},
+ ca:{label:'California AB 2602',href:'https://leginfo.legislature.ca.gov/faces/billNavClient.xhtml?bill_id=202320240AB2602'},
+ tn:{label:'Tennessee ELVIS Act',href:'https://www.capitol.tn.gov/Bills/113/Bill/SB2096.pdf'},
+ eu:{label:'EU AI Act — EUR-Lex',href:'https://eur-lex.europa.eu/legal-content/EN/TXT/?uri=CELEX%3A02024R1689-20260727'}
 }
-
+const AUDIT={
+ influencer:{title:'Influencer / creator partnerships',priority:'Medium',issue:'Material connections and endorsement claims need clear, conspicuous disclosure. AI use may add deception or substantiation questions, but there is no blanket FTC rule requiring every AI-assisted post to carry an “AI-generated” label.',next:'Map each material connection, claim, platform format, and approval responsibility. Review disclosures in context.',sources:['ftc']},
+ 'ai-content':{title:'AI-generated or materially altered content',priority:'High',issue:'AI use can create deception, substantiation, copyright, contract, and provenance questions. Copyrightability depends on the human-authored expression and facts—not a categorical “AI music is never copyrightable” rule.',next:'Record tools, inputs, permissions, human contributions, edits, and review decisions. Escalate material consumer-facing simulations or claims.',sources:['copyright','ftc']},
+ music:{title:'Licensed or AI-assisted music',priority:'Medium',issue:'Rights depend on the source material, licenses, human authorship, performer permissions, and distribution terms. Tool output alone does not establish clearance.',next:'Keep licenses and provenance records; review composition, recording, voice, publicity, and contract rights for the intended territory and media.',sources:['copyright','nofakes']},
+ synthetic:{title:'Synthetic media / digital replicas',priority:'High',issue:'Digital replicas can implicate state likeness and contract rules. California AB 2602 and Tennessee’s ELVIS Act are enacted state measures; the federal NO FAKES Act cited here remains introduced legislation.',next:'Obtain specific written authorization covering the person, replica, uses, media, term, territory, edits, and revocation or termination terms.',sources:['ca','tn','nofakes']},
+ ugc:{title:'User-generated content',priority:'Lower',issue:'UGC may still carry endorsement, license, privacy, likeness, and provenance issues. Brand knowledge and control matter; the label “UGC” is not a safe harbor.',next:'Use submission terms, permission records, moderation, and a documented review path for synthetic or sponsored content.',sources:['ftc','copyright']},
+ celebrity:{title:'Celebrity likeness or partnership',priority:'High',issue:'Publicity, contract, false endorsement, and digital-replica rules vary by jurisdiction and use. Perceived permission is not authorization.',next:'Confirm identity-specific permissions and intended uses in writing, then obtain jurisdiction-specific review before release.',sources:['ca','tn','nofakes']},
+ 'film-tv':{title:'Film or TV content integration',priority:'Lower',issue:'Licenses may need to cover clips, music, performers, marks, edits, synthetic elements, and promotional reuse. A general integration license may not cover every asset.',next:'Create an asset-by-asset rights ledger and compare granted rights with channels, territories, term, edits, and AI-assisted uses.',sources:['copyright']},
+ virtual:{title:'Virtual influencer or avatar',priority:'High',issue:'A virtual persona can create endorsement, deception, IP, privacy, and transparency questions. The EU AI Act has phased obligations; applicability and timing require case-specific analysis.',next:'Disclose the nature of the persona where omission could mislead, document its operators and claims, and obtain counsel for applicable markets.',sources:['ftc','eu']}
+}
+const color={High:['#FCEBEB','#A32D2D'],Medium:['#FAEEDA','#854F0B'],Lower:['#EAF3DE','#3B6D11']}
 export default function Home(){
-  const [reg,setReg]=useState(null)
-  const [regLoading,setRegLoading]=useState(true)
-  const [clientType,setClientType]=useState('')
-  const [desc,setDesc]=useState('')
-  const [checked,setChecked]=useState([])
-  const [results,setResults]=useState(null)
-  const [running,setRunning]=useState(false)
-
-  useEffect(()=>{
-    fetch('/api/regulatory').then(r=>r.json()).then(d=>{setReg(d);setRegLoading(false)}).catch(()=>setRegLoading(false))
-  },[])
-
-  const toggle=(v)=>setChecked(prev=>prev.includes(v)?prev.filter(x=>x!==v):[...prev,v])
-
-  const runAudit=async()=>{
-    if(!clientType)return
-    setRunning(true)
-    await new Promise(r=>setTimeout(r,1400))
-    const findings=checked.map(k=>AUDIT_LOGIC[k]).filter(Boolean)
-    if(!findings.length)findings.push({title:'Standard activation — limited AI governance exposure',risk:'Low',exposure:'No high-risk AI or synthetic media components identified based on selected activation types.',mitigation:'Maintain standard FTC disclosure practices and UGC review protocols.'})
-    setResults(findings)
-    setRunning(false)
-  }
-
-  const totalFtc=(reg?.ftc||[]).length
-  const totalCongress=(reg?.congress||[]).length
-  const totalFR=(reg?.federalRegister||[]).length
-
-  return(<>
-    <Head>
-      <title>Culture Governance Audit — Aloha AI Consulting</title>
-      <meta name="description" content="Cross-reference your campaign's AI and influencer activations against live FTC enforcement actions, pending Congressional AI legislation, and Federal Register rulemaking."/>
-      <meta name="robots" content="noindex"/>
-      <meta property="og:title" content="Culture Governance Audit — Aloha AI Consulting"/>
-      <meta property="og:description" content="Live AI governance risk assessment for marketing and cultural activations."/>
-      <meta property="og:type" content="website"/>
-      <link rel="preconnect" href="https://fonts.googleapis.com"/>
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous"/>
-      <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Manrope:wght@400;500&family=DM+Mono&display=swap" rel="stylesheet"/>
-      <link rel="canonical" href="https://aloha-governance-audit.vercel.app/"/>
-      <meta name="twitter:card" content="summary_large_image"/>
-      <meta name="twitter:title" content="Culture Governance Audit — Aloha AI Consulting"/>
-      <meta name="twitter:description" content="Cross-reference your campaign's AI and influencer activations against live FTC enforcement actions, pending Congressional AI legislation, and Federal Register rulemaking."/>
-      <link rel="sitemap" type="application/xml" href="/sitemap.xml"/>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify({
-        '@context': 'https://schema.org',
-        '@graph': [
-          {'@type':'Person','@id':'https://rn-portfolio-khaki.vercel.app/#rn-collins',
-           'name':'RN Collins','jobTitle':'AI Educator & Consultant',
-           'url':'https://rn-portfolio-khaki.vercel.app',
-           'sameAs':['https://linkedin.com/in/rn-collins']},
-          {'@type':'WebPage','name':'Culture Governance Audit',
-           'description':'Live AI governance risk assessment for marketing and cultural activations.',
-           'url':'https://aloha-governance-audit.vercel.app',
-           'author':{'@id':'https://rn-portfolio-khaki.vercel.app/#rn-collins'}}
-        ]
-      })}} />
-    </Head>
-    <div style={{minHeight:'100vh',display:'flex',flexDirection:'column',background:BG}}>
-      <header style={{background:G,padding:'16px clamp(20px, 5vw, 40px)',display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:8}}>
-        <div style={{display:'flex',alignItems:'center',gap:14}}>
-          <div style={{width:36,height:36,borderRadius:6,background:'rgba(255,255,255,.15)',border:'1px solid rgba(255,255,255,.25)',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'Syne',fontSize:10,fontWeight:700,color:'white',letterSpacing:'.05em'}}>AAC</div>
-          <div>
-            <div style={{fontFamily:'Syne',fontSize:14,fontWeight:600,color:'white'}}>Aloha AI Consulting</div>
-            <div style={{fontSize:11,color:'rgba(255,255,255,.6)'}}>Culture Governance Audit</div>
-          </div>
-        </div>
-        {!regLoading&&(
-          <div style={{fontFamily:'DM Mono',fontSize:11,color:'rgba(255,255,255,.6)'}}>
-            {totalFtc} FTC actions · {totalCongress} AI bills · {totalFR} Fed Register items · live
-          </div>
-        )}
-      </header>
-
-      <main style={{flex:1,maxWidth:860,margin:'0 auto',padding:'clamp(32px, 5vw, 56px) clamp(20px, 5vw, 40px) 100px',width:'100%'}}>
-        <h1 style={{fontFamily:'Syne',fontSize:30,fontWeight:700,color:TX,marginBottom:10,letterSpacing:'-.02em'}}>Culture Governance Audit</h1>
-        <p style={{fontSize:15,color:MU,lineHeight:1.65,marginBottom:48,maxWidth:600}}>Select your client industry and activation types. The tool cross-references them against live FTC enforcement actions, pending Congressional AI legislation, and Federal Register rulemaking to generate a current risk assessment.</p>
-
-        {/* Live regulatory context strip */}
-        {!regLoading&&(totalFtc>0||totalCongress>0)&&(
-          <div style={{background:'white',border:`1px solid ${BD}`,borderRadius:8,padding:'16px 20px',marginBottom:32,display:'flex',gap:24,flexWrap:'wrap'}}>
-            <div style={{fontFamily:'Syne',fontSize:11,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,alignSelf:'center',flexShrink:0}}>Live regulatory context</div>
-            {(reg?.ftc||[]).slice(0,2).map((item,i)=>(
-              <div key={i} style={{flex:'1 1 200px',minWidth:0}}>
-                <div style={{fontSize:11,fontFamily:'DM Mono',color:'#854F0B',marginBottom:2}}>FTC</div>
-                <a href={item.link} target="_blank" rel="noreferrer" style={{fontSize:12,color:TX,lineHeight:1.4,display:'block'}}>{item.title?.slice(0,80)}{item.title?.length>80?'…':''}</a>
-              </div>
-            ))}
-            {(reg?.congress||[]).slice(0,1).map((item,i)=>(
-              <div key={i} style={{flex:'1 1 200px',minWidth:0}}>
-                <div style={{fontSize:11,fontFamily:'DM Mono',color:'#534AB7',marginBottom:2}}>Congress</div>
-                <a href={item.link} target="_blank" rel="noreferrer" style={{fontSize:12,color:TX,lineHeight:1.4,display:'block'}}>{item.title?.slice(0,80)}{item.title?.length>80?'…':''}</a>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <div style={{background:'white',border:`1px solid ${BD}`,borderRadius:10,padding:'clamp(24px, 4vw, 36px) clamp(20px, 4vw, 40px)',marginBottom:40}}>
-          <div style={{marginBottom:24}}>
-            <label htmlFor="client-industry" style={{display:'block',fontFamily:'Syne',fontSize:12,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:8}}>Client industry</label>
-            <select id="client-industry" value={clientType} onChange={e=>setClientType(e.target.value)} aria-label="Client industry" style={{width:'100%',padding:'12px 16px',border:`1px solid ${BD}`,borderRadius:6,fontFamily:'Manrope',fontSize:15,color:TX,background:BG,appearance:'none',outline:'none'}}>
-              <option value="">Select industry...</option>
-              {['Fashion & Luxury','Beauty & Personal Care','Entertainment & Media','Technology','Sports & Fitness','Food & Beverage','Financial Services','Health & Wellness','Retail & E-commerce'].map(o=><option key={o}>{o}</option>)}
-            </select>
-          </div>
-          <div style={{marginBottom:24}}>
-            <label htmlFor="campaign-desc" style={{display:'block',fontFamily:'Syne',fontSize:12,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:8}}>Campaign description</label>
-            <input id="campaign-desc" type="text" value={desc} onChange={e=>setDesc(e.target.value)} placeholder="e.g. Influencer-led launch campaign featuring AI-generated content..." aria-label="Campaign description" style={{width:'100%',padding:'12px 16px',border:`1px solid ${BD}`,borderRadius:6,fontFamily:'Manrope',fontSize:15,color:TX,background:BG,outline:'none'}}/>
-          </div>
-          <div style={{marginBottom:28}}>
-            <label style={{display:'block',fontFamily:'Syne',fontSize:12,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:8}}>Activation types</label>
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',gap:10}}>
-              {Object.entries(AUDIT_LOGIC).map(([k,v])=>(
-                <label key={k} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 14px',border:`1px solid ${checked.includes(k)?G:BD}`,borderRadius:6,background:checked.includes(k)?GL:BG,cursor:'pointer'}}>
-                  <input type="checkbox" checked={checked.includes(k)} onChange={()=>toggle(k)} style={{accentColor:G,width:16,height:16,flexShrink:0}}/>
-                  <span style={{fontSize:13,color:TX}}>{v.title}</span>
-                </label>
-              ))}
-            </div>
-          </div>
-          <p style={{fontSize:12,color:MU,lineHeight:1.6,marginBottom:16,padding:'12px 16px',background:GL,borderRadius:6,border:`1px solid ${BD}`}}>This tool provides informational risk context only and does not constitute legal advice. Consult qualified legal counsel before making compliance decisions.</p>
-          <button onClick={runAudit} disabled={!clientType||running} style={{display:'block',width:'100%',padding:16,background:!clientType||running?'#9BBFBA':G,border:'none',borderRadius:8,fontFamily:'Syne',fontSize:15,fontWeight:600,color:'white',cursor:!clientType||running?'not-allowed':'pointer'}}>
-            {running?'Running audit...':'Run Governance Audit'}
-          </button>
-        </div>
-
-        {results&&(
-          <div>
-            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',flexWrap:'wrap',gap:12,marginBottom:6}}>
-              <h2 style={{fontFamily:'Syne',fontSize:20,fontWeight:700,color:TX}}>{results.length} exposure area{results.length!==1?'s':''} identified</h2>
-              <button onClick={()=>{setResults(null);setChecked([]);setDesc('');setClientType('')}} style={{fontFamily:'Syne',fontSize:12,fontWeight:600,padding:'8px 16px',background:'transparent',border:`1px solid ${BD}`,borderRadius:6,color:MU,cursor:'pointer'}}>Clear and start over</button>
-            </div>
-            <p style={{fontSize:14,color:MU,marginBottom:24}}>{results.filter(r=>r.risk==='High').length} high-risk · {results.filter(r=>r.risk==='Medium').length} medium-risk · cross-referenced against {totalFtc} live FTC actions and {totalCongress} pending AI bills</p>
-            {results.map((f,i)=>{
-              const rc=RISK[f.risk]||RISK.Low
-              return(
-                <div key={i} style={{background:'white',border:`1px solid ${BD}`,borderRadius:10,padding:'28px 32px',marginBottom:16}}>
-                  <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:16,marginBottom:16}}>
-                    <div style={{fontFamily:'Syne',fontSize:16,fontWeight:600,color:TX}}>{f.title}</div>
-                    <span style={{display:'inline-block',padding:'5px 12px',borderRadius:4,fontFamily:'Syne',fontSize:11,fontWeight:700,letterSpacing:'.06em',textTransform:'uppercase',background:rc.bg,color:rc.text,flexShrink:0}}>{f.risk} Risk</span>
-                  </div>
-                  <div style={{borderTop:`1px solid ${BD}`,paddingTop:16}}>
-                    {[['Exposure',f.exposure],['Mitigation',f.mitigation]].map(([label,text])=>(
-                      <div key={label} style={{marginBottom:12}}>
-                        <div style={{fontFamily:'Syne',fontSize:11,fontWeight:600,letterSpacing:'.08em',textTransform:'uppercase',color:MU,marginBottom:4}}>{label}</div>
-                        <div style={{fontSize:14,color:TX,lineHeight:1.65}}>{text}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-            <InquiryModal source="governance-audit" />
-    </main>
-
-      <footer style={{background:TX,padding:'28px clamp(20px, 5vw, 40px)',display:'flex',alignItems:'center',justifyContent:'space-between',gap:24,flexWrap:'wrap'}}>
-        <div>
-          <div style={{fontFamily:'Syne',fontSize:13,fontWeight:600,color:'white'}}>RN Collins</div>
-          <div style={{fontSize:12,color:'rgba(255,255,255,.5)',marginTop:2}}>Neuroscientist · JD Candidate, Northeastern · AI Governance Researcher, Brown University AISLE Project</div>
-        </div>
-        <div style={{display:'flex',gap:20}}>
-          <a href="mailto:collins.ra@northeastern.edu" style={{fontSize:13,color:'rgba(255,255,255,.65)'}}>collins.ra@northeastern.edu</a>
-          <a href="https://linkedin.com/in/rn-collins" target="_blank" rel="noreferrer" style={{fontSize:13,color:'rgba(255,255,255,.65)'}}>LinkedIn</a>
-        </div>
-      </footer>
-    </div>
-
-{/* Contact the Architect */}
-<div style={{position:'fixed',bottom:'1.5rem',right:'1.5rem',zIndex:9999}}>
-  <button onClick={()=>{const m=document.getElementById('ca-modal');m.style.display='flex';}}
-    style={{fontSize:'.65rem',textTransform:'uppercase',letterSpacing:'.08em',background:'#B8842A',
-    color:'#fff',border:'none',padding:'.55rem 1.1rem',borderRadius:'2rem',cursor:'pointer',
-    boxShadow:'0 2px 12px rgba(0,0,0,.35)'}}>Contact the Architect</button>
-</div>
-<div id="ca-modal" role="dialog" aria-modal="true" aria-labelledby="ca-modal-h"
-  style={{display:'none',position:'fixed',inset:0,zIndex:10000,background:'rgba(0,0,0,.8)',
-  alignItems:'center',justifyContent:'center'}}>
-  <div style={{background:'#fff',maxWidth:420,width:'90%',padding:'2rem',borderRadius:4}}>
-    <h2 id="ca-modal-h" style={{margin:'0 0 1rem'}}>Contact the Architect</h2>
-    <input id="ca-name" placeholder="Name (optional)" aria-label="Name"
-      style={{width:'100%',padding:'.6rem',marginBottom:'.75rem',border:'1px solid #ccc',boxSizing:'border-box'}}/>
-    <input id="ca-email" type="email" placeholder="Email (required)" aria-label="Email"
-      style={{width:'100%',padding:'.6rem',marginBottom:'.75rem',border:'1px solid #ccc',boxSizing:'border-box'}}/>
-    <textarea id="ca-msg" rows={3} placeholder="Message" aria-label="Message"
-      style={{width:'100%',padding:'.6rem',marginBottom:'.75rem',border:'1px solid #ccc',boxSizing:'border-box',resize:'vertical'}}></textarea>
-    <div style={{display:'flex',gap:'.75rem',justifyContent:'flex-end'}}>
-      <button onClick={()=>document.getElementById('ca-modal').style.display='none'}
-        style={{background:'none',border:'1px solid #ccc',padding:'.5rem 1rem',cursor:'pointer'}}>Cancel</button>
-      <button onClick={()=>{
-        const e=document.getElementById('ca-email').value;
-        if(!e){alert('Email is required');return;}
-        fetch('/api/lead',{method:'POST',headers:{'Content-Type':'application/json'},
-          body:JSON.stringify({name:document.getElementById('ca-name').value,email:e,
-          message:document.getElementById('ca-msg').value,source:'contact-architect-aloha-governance-audit'})})
-        .then(()=>{document.getElementById('ca-modal').style.display='none';alert('Sent!');})
-        .catch(()=>alert('Error. Please try again.'));
-      }} style={{background:'#1B7A68',color:'#fff',border:'none',padding:'.5rem 1rem',cursor:'pointer'}}>Send</button>
-    </div>
-  </div>
-</div>
-<div style={{textAlign:'center',padding:'.75rem 1rem',fontSize:'.7rem',borderTop:'1px solid rgba(0,0,0,.1)',marginTop:'2rem'}}>
-  Built by <a href="https://rn-portfolio-khaki.vercel.app" target="_blank" rel="noopener"
-  style={{color:'#1B7A68',textDecoration:'none'}}>RN Builds</a> · <a href="https://aloha-ai-consulting.vercel.app" target="_blank" rel="noopener" style={{color:'inherit',textDecoration:'none'}}>Aloha AI Consulting</a> — explore all AI tools and projects.
-</div>
-  </>)
+ const [industry,setIndustry]=useState(''),[desc,setDesc]=useState(''),[checked,setChecked]=useState([]),[results,setResults]=useState(null)
+ const toggle=k=>setChecked(v=>v.includes(k)?v.filter(x=>x!==k):[...v,k])
+ const run=()=>setResults(checked.length?checked.map(k=>AUDIT[k]):[{title:'No activation type selected',priority:'Lower',issue:'No issue-specific screening was performed. A low-priority display is not a finding that the campaign is compliant or risk-free.',next:'Select every applicable activation type and obtain matter-specific review before launch.',sources:['ftc','copyright']}])
+ const clear=()=>{setIndustry('');setDesc('');setChecked([]);setResults(null)}
+ return <><Head><title>Culture Governance Issue-Spotter — Aloha AI Consulting</title><meta name="description" content="A browser-local issue-spotting checklist for cultural and AI-enabled campaigns, with official sources and clear limitations."/><meta name="robots" content="index, follow"/><link rel="canonical" href="https://aloha-governance-audit.vercel.app/"/><meta property="og:title" content="Culture Governance Issue-Spotter"/><meta property="og:description" content="Informational, browser-local governance issue spotting with official source links."/><meta property="og:type" content="website"/></Head>
+ <header><div><strong>Aloha AI Consulting</strong><span>Culture Governance Issue-Spotter</span></div><nav><a href="/sources">Sources</a><a href="/privacy">Privacy</a></nav></header>
+ <main>
+  <p className="eyebrow">Informational checklist · verified 16 August 2026</p>
+  <h1>Spot governance questions before a campaign ships.</h1>
+  <p className="lede">Choose the activation types in your campaign. This browser-local checklist returns issue-spotting prompts and official sources. It does not monitor feeds, determine compliance, score legal risk, or provide legal advice.</p>
+  <section className="notice"><strong>Privacy boundary:</strong> entries and selections stay in this browser tab. They are not submitted to us. Do not enter confidential or privileged information.</section>
+  <section className="panel" aria-labelledby="audit-heading"><h2 id="audit-heading">Campaign context</h2>
+   <label htmlFor="industry">Client industry</label><select id="industry" value={industry} onChange={e=>setIndustry(e.target.value)}><option value="">Select industry…</option>{['Fashion & Luxury','Beauty & Personal Care','Entertainment & Media','Technology','Sports & Fitness','Food & Beverage','Financial Services','Health & Wellness','Retail & E-commerce'].map(x=><option key={x}>{x}</option>)}</select>
+   <label htmlFor="description">Campaign description <span>(optional; remains in this tab)</span></label><input id="description" value={desc} onChange={e=>setDesc(e.target.value)} maxLength={300} placeholder="Brief non-confidential context"/>
+   <fieldset><legend>Activation types</legend><div className="grid">{Object.entries(AUDIT).map(([k,v])=><label className={'check '+(checked.includes(k)?'active':'')} key={k}><input type="checkbox" checked={checked.includes(k)} onChange={()=>toggle(k)}/><span>{v.title}</span></label>)}</div></fieldset>
+   <button className="primary" disabled={!industry} onClick={run}>Review selected areas</button>{!industry&&<p className="hint">Select an industry to continue.</p>}
+  </section>
+  {results&&<section aria-live="polite"><div className="resultHead"><div><p className="eyebrow">Issue-spotting output</p><h2>{results.length} review area{results.length===1?'':'s'}</h2></div><button className="secondary" onClick={clear}>Clear and start over</button></div>
+   <p className="scope">Priorities are screening cues, not probability estimates or legal conclusions. Confidence: heuristic only; no facts, documents, jurisdictions, or current-law applicability were evaluated.</p>
+   {results.map((f,i)=><article className="card" key={f.title}><div className="cardTitle"><h3>{f.title}</h3><span style={{background:color[f.priority][0],color:color[f.priority][1]}}>{f.priority} review priority</span></div><h4>Question to review</h4><p>{f.issue}</p><h4>Suggested next step</h4><p>{f.next}</p><h4>Official starting points</h4><ul>{f.sources.map(s=><li key={s}><a href={SOURCES[s].href} target="_blank" rel="noreferrer">{SOURCES[s].label}</a></li>)}</ul></article>)}
+  </section>}
+ </main>
+ <footer><div><strong>RN Collins</strong><span>AI governance research and education</span></div><div><a href="mailto:collins.ra@northeastern.edu">Email</a><a href="https://linkedin.com/in/rn-collins" target="_blank" rel="noreferrer">LinkedIn</a><a href="/sources">Sources & limitations</a><a href="/privacy">Privacy</a></div></footer>
+ <style jsx global>{`*{box-sizing:border-box}body{margin:0;background:${BG};color:${TX};font-family:Manrope,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}a{color:inherit}header{background:${G};color:white;padding:18px clamp(20px,5vw,48px);display:flex;justify-content:space-between;gap:24px;align-items:center}header div{display:flex;flex-direction:column;gap:3px}header span{font-size:12px;opacity:.72}nav,footer div:last-child{display:flex;gap:18px;flex-wrap:wrap}nav a,footer a{font-size:13px}main{width:min(860px,calc(100% - 40px));margin:auto;padding:64px 0 100px}.eyebrow{text-transform:uppercase;letter-spacing:.1em;font-size:11px;font-weight:700;color:${G}}h1{font-size:clamp(36px,7vw,64px);line-height:1.04;max-width:760px;margin:12px 0 20px}h2{font-size:26px}.lede{font-size:18px;line-height:1.7;max-width:720px;color:${MU}}.notice,.scope{padding:16px 18px;background:#E8F5F2;border:1px solid #c7dfda;border-radius:8px;line-height:1.6;margin:28px 0}.panel,.card{background:white;border:1px solid ${BD};border-radius:12px;padding:clamp(22px,5vw,40px);margin:28px 0}label,legend{font-size:13px;font-weight:700;display:block;margin:18px 0 8px}label span{font-weight:400;color:${MU}}select,input{width:100%;font:inherit;padding:13px 14px;border:1px solid ${BD};border-radius:7px;background:#fbfaf7}fieldset{border:0;padding:0;margin:22px 0}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}.check{display:flex;align-items:center;gap:10px;margin:0;padding:12px;border:1px solid ${BD};border-radius:7px;cursor:pointer}.check.active{border-color:${G};background:#E8F5F2}.check input{width:17px}.check span{color:${TX};font-size:13px}.primary,.secondary{font:inherit;font-weight:700;border-radius:7px;padding:13px 18px;cursor:pointer}.primary{width:100%;border:0;background:${G};color:white}.primary:disabled{opacity:.45;cursor:not-allowed}.secondary{background:transparent;border:1px solid ${BD}}.hint{text-align:center;font-size:12px;color:${MU}}.resultHead,.cardTitle,footer{display:flex;justify-content:space-between;align-items:center;gap:20px}.scope{background:#fff8e8;border-color:#ead9ab}.card h3{margin:0;font-size:19px}.cardTitle span{white-space:nowrap;border-radius:99px;padding:7px 10px;text-transform:uppercase;font-size:10px;font-weight:800;letter-spacing:.06em}.card h4{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:${MU};margin:22px 0 5px}.card p,.card li{line-height:1.65;font-size:14px}.card a{color:#0F5E50}footer{background:${TX};color:white;padding:30px clamp(20px,5vw,48px);flex-wrap:wrap}footer div:first-child{display:flex;flex-direction:column;gap:4px}footer span{font-size:12px;opacity:.6}@media(max-width:600px){header,.resultHead,.cardTitle{align-items:flex-start;flex-direction:column}.cardTitle span{white-space:normal}main{padding-top:42px}}`}</style></>
 }
