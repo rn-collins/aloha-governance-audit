@@ -1,7 +1,0 @@
-const sources=[
- {id:'ftc-endorsements',publisher:'Federal Trade Commission',title:'Endorsements, Influencers, and Reviews',url:'https://www.ftc.gov/business-guidance/advertising-marketing/endorsements-influencers-reviews',status:'official guidance'},
- {id:'copyright-ai',publisher:'U.S. Copyright Office',title:'Copyright and Artificial Intelligence',url:'https://www.copyright.gov/ai/',status:'official initiative and reports'},
- {id:'hr-2794',publisher:'Congress.gov',title:'H.R. 2794 — NO FAKES Act of 2025',url:'https://www.congress.gov/bill/119th-congress/house-bill/2794',status:'introduced; verify current status at source'},
- {id:'federal-register',publisher:'Federal Register',title:'Federal Register search: artificial intelligence',url:'https://www.federalregister.gov/documents/search?conditions%5Bterm%5D=artificial+intelligence',status:'official publication search'}
-]
-export default function handler(req,res){res.setHeader('Cache-Control','public, max-age=3600, stale-while-revalidate=86400');res.status(200).json({kind:'curated-official-starting-points',usedInScoring:false,liveFeed:false,verifiedDate:'2026-08-16',limitations:'This list is not exhaustive and does not determine current-law applicability. Open each official source to verify status and scope.',sources})}
