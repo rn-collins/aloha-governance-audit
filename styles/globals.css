@@ -1,3 +1,7 @@
+/* Manrope is named in the page's own font stack but was never served, and
+   font-src 'self' data: blocks every webfont host — so it silently fell
+   back to system-ui. Vendored locally so the intended face actually renders. */
+@font-face{font-family:Manrope;src:url(/fonts/manrope-variable.woff2) format('woff2');font-weight:400 700;font-style:normal;font-display:swap;}
 *{box-sizing:border-box;margin:0;padding:0}html,body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#F6F3EC;color:#1C1B1F}a{color:inherit}nav a,footer a{text-underline-offset:3px}button,input,select{font:inherit}:focus-visible{outline:3px solid #B8842A;outline-offset:3px}.srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto !important}*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
 @media(forced-colors:active){.check.active,.primary{forced-color-adjust:auto}.check{border:1px solid ButtonText}}
